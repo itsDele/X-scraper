@@ -35,18 +35,29 @@ def loginX(driver):
     return driver
 
 
+def retweets(driver, url):
+    retweet_urls = f"{url}/retweets"
+    driver.get(retweet_urls)
+    time.sleep(5)
+
+    users = driver.find_elements(By.CSS_SELECTOR, '[data-testid="UserCell"]')
+
+    print(f"Found {len(users)} retweeters:")
+    for i, user in enumerate(users, 1):
+        try:
+            profile_link = user.find_element(
+                By.CSS_SELECTOR, 'a[href*="/"]'
+            ).get_attribute("href")
+            username = "@" + profile_link.split("/")[-1]
+            print(f"{i}. {username} - {profile_link}")
+        except:
+            continue
+
+    driver.quit()
+
+
+url = "https://x.com/clcoding/status/1957509803057574278"
+
 driver = webdriver.Chrome()
 driver = loginX(driver)
-
-
-# url = "https://x.com/clcoding/status/1957509803057574278"
-# retweet_urls = f"{url}/retweets"
-# driver.get(retweet_urls)
-# time.sleep(5)
-
-
-# users = driver.find_elements(
-#   By.CSS_SELECTOR, value=".css-175oi2r r-1awozwy r-18u37iz r-dnmrzs"
-# )
-# driver.quit()
-# print(users)
+retweets(driver, url)
