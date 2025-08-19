@@ -106,11 +106,71 @@ def retweets(driver, url):
     for i, (username, link) in enumerate(retweeters, 1):
         print(f"{i}. {username} - {link}")
 
-    driver.quit()
+    return driver
+
+
+def qoutes(driver, url):
+    qoutes_url = f"{url}/quotes"
+    driver.get(qoutes_url)
+    time.sleep(5)
+
+    quoters = []
+    seen = set()
+    patience_count = 0
+    patience = 5
+    scroll_pause = 3
+    viewport_height = driver.execute_script("return window.innerHeight")
+
+    while True:
+        current_cells = driver.find_elements(By.CSS_SELECTOR, '[data-testid="tweet"]')
+        new_added = False
+        for cell in current_cells:
+            try:
+                # Get username and profile link
+                link_elem = cell.find_element(By.CSS_SELECTOR, 'a[href*="/"]')
+                profile_link = link_elem.get_attribute("href")
+                username = "@" + profile_link.split("/")[-1]
+
+                # Get quote tweet URL
+                quote_link = cell.find_element(By.CSS_SELECTOR, 'a[href*="/status/"]')
+                quote_url = quote_link.get_attribute("href")
+
+                # Get quote tweet text
+                quote_text_elem = cell.find_element(
+                    By.CSS_SELECTOR, '[data-testid="tweetText"]'
+                )
+                quote_text = quote_text_elem.text.strip()
+
+                if username not in seen:
+                    seen.add(username)
+                    quoters.append((username, profile_link, quote_text, quote_url))
+                    new_added = True
+            except:
+                continue
+
+        if not new_added:
+            patience_count += 1
+            if patience_count >= patience:
+                break
+        else:
+            patience_count = 0
+
+        driver.execute_script(f"window.scrollBy(0, {viewport_height});")
+        time.sleep(scroll_pause)
+
+    print(f"Found {len(quoters)} quoters:")
+    for i, (username, profile_link, quote_text, quote_url) in enumerate(quoters, 1):
+        print(f"{i}. {username} - {profile_link}")
+        print(f"   Quote: {quote_text}")
+        print(f"   Quote URL: {quote_url}")
+
+    return driver
 
 
 url = "https://x.com/clcoding/status/1957509803057574278"
 
 driver = webdriver.Chrome()
 driver = loginX(driver)
-retweets(driver, url)
+driver = retweets(driver, url)
+driver = qoutes(driver, url)
+driver.quit()
