@@ -1,0 +1,17 @@
+{
+    "urls": [
+      "https://x.com/clcoding/status/1957509803057574278",
+      "https://x.com/another_user/status/123456789"
+    ],
+    "output_formats": ["json", "csv"],
+    "credentials": {
+      "TWITTER_USERNAME": "your_username",
+      "TWITTER_PASSWORD": "your_password",
+      "TWITTER_EMAIL": "your_email"
+    },
+    "proxy": {
+      "host": "proxy.example.com",
+      "port": 8080
+    },
+    "output_dir": "results"
+  }
