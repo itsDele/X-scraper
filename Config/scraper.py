@@ -5,6 +5,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 from dotenv import load_dotenv
+import json
+import csv
+import pandas as pd
 
 load_dotenv()
 
@@ -102,11 +105,31 @@ def retweets(driver, url):
         driver.execute_script(f"window.scrollBy(0, {viewport_height});")
         time.sleep(scroll_pause)
 
-    print(f"Found {len(retweeters)} retweeters:")
-    for i, (username, link) in enumerate(retweeters, 1):
-        print(f"{i}. {username} - {link}")
+    # Save to files
+    retweeters_dict = [
+        {"username": username, "profile_link": link} for username, link in retweeters
+    ]
 
-    return driver
+    # JSON
+    with open("retweets.json", "w", encoding="utf-8") as json_file:
+        json.dump(retweeters_dict, json_file, ensure_ascii=False, indent=4)
+
+    # CSV
+    with open("retweets.csv", "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=["username", "profile_link"])
+        writer.writeheader()
+        writer.writerows(retweeters_dict)
+
+    # Excel Pandas
+    df = pd.DataFrame(retweeters_dict)
+    df.to_excel("retweets.xlsx", index=False)
+
+    # TXT
+    with open("retweets.txt", "w", encoding="utf-8") as txt_file:
+        for i, (username, link) in enumerate(retweeters, 1):
+            txt_file.write(f"{i}. {username} - {link}\n")
+
+    return driver, retweeters
 
 
 def qoutes(driver, url):
@@ -158,19 +181,47 @@ def qoutes(driver, url):
         driver.execute_script(f"window.scrollBy(0, {viewport_height});")
         time.sleep(scroll_pause)
 
-    print(f"Found {len(quoters)} quoters:")
-    for i, (username, profile_link, quote_text, quote_url) in enumerate(quoters, 1):
-        print(f"{i}. {username} - {profile_link}")
-        print(f"   Quote: {quote_text}")
-        print(f"   Quote URL: {quote_url}")
+    # Save to files
+    quoters_dict = [
+        {
+            "username": username,
+            "profile_link": profile_link,
+            "quote_text": quote_text,
+            "quote_url": quote_url,
+        }
+        for username, profile_link, quote_text, quote_url in quoters
+    ]
 
-    return driver
+    # JSON
+    with open("quoters.json", "w", encoding="utf-8") as json_file:
+        json.dump(quoters_dict, json_file, ensure_ascii=False, indent=4)
+
+    # CSV
+    with open("quoters.csv", "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.DictWriter(
+            csv_file, fieldnames=["username", "profile_link", "quote_text", "quote_url"]
+        )
+        writer.writeheader()
+        writer.writerows(quoters_dict)
+
+    # Excel Pandas
+    df = pd.DataFrame(quoters_dict)
+    df.to_excel("quoters.xlsx", index=False)
+
+    # TXT
+    with open("quoters.txt", "w", encoding="utf-8") as txt_file:
+        for i, (username, profile_link, quote_text, quote_url) in enumerate(quoters, 1):
+            txt_file.write(f"{i}. {username} - {profile_link}\n")
+            txt_file.write(f"   Quote: {quote_text}\n")
+            txt_file.write(f"   Quote URL: {quote_url}\n\n")
+
+    return driver, quoters
 
 
 url = "https://x.com/clcoding/status/1957509803057574278"
 
 driver = webdriver.Chrome()
 driver = loginX(driver)
-driver = retweets(driver, url)
-driver = qoutes(driver, url)
+driver, retweeters_data = retweets(driver, url)
+driver, quoters_data = qoutes(driver, url)
 driver.quit()
