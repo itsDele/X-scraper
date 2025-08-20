@@ -1,3 +1,4 @@
+V1.0.0 released check it out
 This project is about scraper that extracts Accounts/profiles in X platform who retweeted and qouted certain public posts.
 key features contain:
 
