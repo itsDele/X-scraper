@@ -1,5 +1,7 @@
 create venv via: python -m venv venv
+source venv/scripts/activate
 to install requirements.txt after creating venv use: pip install -r requirements.txt
+cd config
 dont forget to download the latest version of chrome for our webdriver
 now config the input.json like below and after that run this command to use the scraper:
 
