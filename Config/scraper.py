@@ -9,16 +9,24 @@ import json
 import csv
 import pandas as pd
 import argparse
-import sys
+from concurrent.futures import ThreadPoolExecutor
+import threading
+import asyncio
 
 
 def parse_arguments():
     # command-line arguments
-    parser = argparse.ArgumentParser
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input-file",
         required=True,
         help="Path to the input JSON file containing URLs, output formats, credentials, proxy settings, and output directory.",
+    )
+    parser.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=2,
+        help="Maximum number of concurrent browser.",
     )
     return parser.parse_args()
 
@@ -104,7 +112,7 @@ def scroll_to_load_all(driver, element_selector, patience=3, scroll_pause=2):
         last_count = new_count
 
 
-def retweets(driver, url, output_dir, output_formats):
+def retweets(driver, url, output_dir, output_formats, lock):
     retweet_url = f"{url}/retweets"
     driver.get(retweet_url)
     time.sleep(5)
@@ -143,41 +151,51 @@ def retweets(driver, url, output_dir, output_formats):
         driver.execute_script(f"window.scrollBy(0, {viewport_height});")
         time.sleep(scroll_pause)
 
-    os.makedirs(output_dir, exist_ok=True)
-    url_id = url.split("/")[-1]
-    retweeters_dict = [
-        {"username": username, "profile_link": link} for username, link in retweeters
-    ]
+    with lock:
+        os.makedirs(output_dir, exist_ok=True)
+        url_id = url.split("/")[-1]
+        retweeters_dict = [
+            {"username": username, "profile_link": link}
+            for username, link in retweeters
+        ]
 
-    if "json" in output_formats:
-        with open(
-            os.path.join(output_dir, f"retweets_{url_id}.json"), "w", encoding="utf-8"
-        ) as json_file:
-            json.dump(retweeters_dict, json_file, ensure_ascii=False, indent=4)
-    if "csv" in output_formats:
-        with open(
-            os.path.join(output_dir, f"retweets_{url_id}.csv"),
-            "w",
-            newline="",
-            encoding="utf-8",
-        ) as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=["username", "profile_link"])
-            writer.writeheader()
-            writer.writerows(retweeters_dict)
-    if "excel" in output_formats:
-        df = pd.DataFrame(retweeters_dict)
-        df.to_excel(os.path.join(output_dir, f"retweets_{url_id}.xlsx"), index=False)
-    if "txt" in output_formats:
-        with open(
-            os.path.join(output_dir, f"retweets_{url_id}.txt"), "w", encoding="utf-8"
-        ) as txt_file:
-            for i, (username, link) in enumerate(retweeters, 1):
-                txt_file.write(f"{i}. {username} - {link}\n")
+        if "json" in output_formats:
+            with open(
+                os.path.join(output_dir, f"retweets_{url_id}.json"),
+                "w",
+                encoding="utf-8",
+            ) as json_file:
+                json.dump(retweeters_dict, json_file, ensure_ascii=False, indent=4)
+        if "csv" in output_formats:
+            with open(
+                os.path.join(output_dir, f"retweets_{url_id}.csv"),
+                "w",
+                newline="",
+                encoding="utf-8",
+            ) as csv_file:
+                writer = csv.DictWriter(
+                    csv_file, fieldnames=["username", "profile_link"]
+                )
+                writer.writeheader()
+                writer.writerows(retweeters_dict)
+        if "excel" in output_formats:
+            df = pd.DataFrame(retweeters_dict)
+            df.to_excel(
+                os.path.join(output_dir, f"retweets_{url_id}.xlsx"), index=False
+            )
+        if "txt" in output_formats:
+            with open(
+                os.path.join(output_dir, f"retweets_{url_id}.txt"),
+                "w",
+                encoding="utf-8",
+            ) as txt_file:
+                for i, (username, link) in enumerate(retweeters, 1):
+                    txt_file.write(f"{i}. {username} - {link}\n")
 
     return driver, retweeters
 
 
-def qoutes(driver, url, output_dir, output_formats):
+def qoutes(driver, url, output_dir, output_formats, lock):
     qoutes_url = f"{url}/quotes"
     driver.get(qoutes_url)
     time.sleep(5)
@@ -227,68 +245,101 @@ def qoutes(driver, url, output_dir, output_formats):
         time.sleep(scroll_pause)
 
     # Save to files
-    os.makedirs(output_dir, exist_ok=True)
-    url_id = url.split("/")[-1]
-    quoters_dict = [
-        {
-            "username": username,
-            "profile_link": profile_link,
-            "quote_text": quote_text,
-            "quote_url": quote_url,
-        }
-        for username, profile_link, quote_text, quote_url in quoters
-    ]
+    with lock:
+        os.makedirs(output_dir, exist_ok=True)
+        url_id = url.split("/")[-1]
+        quoters_dict = [
+            {
+                "username": username,
+                "profile_link": profile_link,
+                "quote_text": quote_text,
+                "quote_url": quote_url,
+            }
+            for username, profile_link, quote_text, quote_url in quoters
+        ]
 
-    if "json" in output_formats:
-        with open(
-            os.path.join(output_dir, f"quoters_{url_id}.json"), "w", encoding="utf-8"
-        ) as json_file:
-            json.dump(quoters_dict, json_file, ensure_ascii=False, indent=4)
-    if "csv" in output_formats:
-        with open(
-            os.path.join(output_dir, f"quoters_{url_id}.csv"),
-            "w",
-            newline="",
-            encoding="utf-8",
-        ) as csv_file:
-            writer = csv.DictWriter(
-                csv_file,
-                fieldnames=["username", "profile_link", "quote_text", "quote_url"],
-            )
-            writer.writeheader()
-            writer.writerows(quoters_dict)
-    if "excel" in output_formats:
-        df = pd.DataFrame(quoters_dict)
-        df.to_excel(os.path.join(output_dir, f"quoters_{url_id}.xlsx"), index=False)
-    if "txt" in output_formats:
-        with open(
-            os.path.join(output_dir, f"quoters_{url_id}.txt"), "w", encoding="utf-8"
-        ) as txt_file:
-            for i, (username, profile_link, quote_text, quote_url) in enumerate(
-                quoters, 1
-            ):
-                txt_file.write(f"{i}. {username} - {profile_link}\n")
-                txt_file.write(f"   Quote: {quote_text}\n")
-                txt_file.write(f"   Quote URL: {quote_url}\n\n")
+        if "json" in output_formats:
+            with open(
+                os.path.join(output_dir, f"quoters_{url_id}.json"),
+                "w",
+                encoding="utf-8",
+            ) as json_file:
+                json.dump(quoters_dict, json_file, ensure_ascii=False, indent=4)
+        if "csv" in output_formats:
+            with open(
+                os.path.join(output_dir, f"quoters_{url_id}.csv"),
+                "w",
+                newline="",
+                encoding="utf-8",
+            ) as csv_file:
+                writer = csv.DictWriter(
+                    csv_file,
+                    fieldnames=["username", "profile_link", "quote_text", "quote_url"],
+                )
+                writer.writeheader()
+                writer.writerows(quoters_dict)
+        if "excel" in output_formats:
+            df = pd.DataFrame(quoters_dict)
+            df.to_excel(os.path.join(output_dir, f"quoters_{url_id}.xlsx"), index=False)
+        if "txt" in output_formats:
+            with open(
+                os.path.join(output_dir, f"quoters_{url_id}.txt"), "w", encoding="utf-8"
+            ) as txt_file:
+                for i, (username, profile_link, quote_text, quote_url) in enumerate(
+                    quoters, 1
+                ):
+                    txt_file.write(f"{i}. {username} - {profile_link}\n")
+                    txt_file.write(f"   Quote: {quote_text}\n")
+                    txt_file.write(f"   Quote URL: {quote_url}\n\n")
 
     return driver, quoters
 
 
-def main():
-    args = parse_arguments()
-    urls, output_formats, credentials, proxy, output_dir = load_input_file(
-        args.input_file
-    )
-
+def process_url(url, credentials, proxy, output_dir, output_formats, lock):
     driver = setup_driver(proxy)
     try:
         driver = loginX(driver, credentials)
-        for url in urls:
-            driver = retweets(driver, url, output_dir, output_formats)
-            driver = qoutes(driver, url, output_dir, output_formats)
+        driver, retweeters = retweets(driver, url, output_dir, output_formats, lock)
+        driver, quoters = qoutes(driver, url, output_dir, output_formats, lock)
+        return url, retweeters, quoters
     finally:
         driver.quit()
 
 
+async def main():
+    args = parse_arguments()
+    urls, output_formats, credentials, proxy, output_dir = load_input_file(
+        args.input_file
+    )
+    lock = threading.Lock()
+    max_concurrent = args.max_concurrent
+
+    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+        loop = asyncio.get_event_loop()
+        tasks = [
+            loop.run_in_executor(
+                executor,
+                process_url,
+                url,
+                credentials,
+                proxy,
+                output_dir,
+                output_formats,
+                lock,
+            )
+            for url in urls
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                print(f"Error processing URL: {result}")
+            else:
+                url, retweeters, quoters = result
+                print(
+                    f"Processed {url}: {len(retweeters)} retweeters, {len(quoters)} quoters"
+                )
+
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

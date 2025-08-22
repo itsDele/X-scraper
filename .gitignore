@@ -1,1 +1,4 @@
 .env
+results
+input.json
+Config/input.json
