@@ -3,9 +3,12 @@ to install requirements.txt after creating venv use: pip install -r requirements
 dont forget to download the latest version of chrome for our webdriver
 now config the input.json like below and after that run this command to use the scraper:
 
-python scraper.py --input-file input.json --max-concurrent 2
+python main.py --input-file input.json --max-concurrent 2
 you can adjust the max concurrent to 1 or more based on your network and system spec(2 for 8 GB RAM, 4 for 16 GB RAM)
 while you are adjusting your input file keep in mind that the username,password,email must be correct and valid or the code will not run
+in browser.py at the setup_driver function you can add the headless argument for reduced gpu use and its better perfomance if you are using a server just remove my # and the comment after chrome_options.add_argument("--headless")
+in utils.py you can adjust the class Constants to your like their info is commnted infront of them
+hope you enjoy!
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 Example input.json:
 {

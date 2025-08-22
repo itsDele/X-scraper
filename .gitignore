@@ -1,3 +1,4 @@
 .env
 results
 Config/input.json
+Config/__pycache__
