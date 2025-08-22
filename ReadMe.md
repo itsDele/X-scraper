@@ -1,5 +1,7 @@
 latest version V2.0.0 is now released check the so what does the latest version offer .md
+
 V1.0.0 released check it out
+
 read the how to use.md to learn how to use the program
 
 This project is about scraper that extracts Accounts/profiles in X platform who retweeted and qouted certain public posts.
