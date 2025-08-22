@@ -1,4 +1,5 @@
 V1.0.0 released check it out
+
 This project is about scraper that extracts Accounts/profiles in X platform who retweeted and qouted certain public posts.
 key features contain:
 
@@ -14,4 +15,4 @@ Click buttons,Scroll pages to trigger lazy loading,Wait for elements to appear a
 5-using CLI to make it more user friendly and Automation why?:CLI allows you to Run the scraper without modifying the source code,CLI works headlessly which works with Docker containers and Cloud servers
 
 these were the main features of the project
-feature that could make perfomance better is using async so we can maybe half the time to process i have it in mind to implant it
+feature that could make perfomance better is using async so we can maybe half the time to process i have it in mind to implant it(its now implanted)

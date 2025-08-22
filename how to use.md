@@ -1,8 +1,12 @@
+create venv via: python -m venv venv
+to install requirements.txt after creating venv use: pip install -r requirements.txt
+dont forget to download the latest version of chrome for our webdriver
+now config the input.json like below and after that run this command to use the scraper:
 
-
-
-
-
+python scraper.py --input-file input.json --max-concurrent 2
+you can adjust the max concurrent to 1 or more based on your network and system spec(2 for 8 GB RAM, 4 for 16 GB RAM)
+while you are adjusting your input file keep in mind that the username,password,email must be correct and valid or the code will not run
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 Example input.json:
 {
   "urls": [
@@ -22,17 +26,18 @@ Example input.json:
   },
   "output_dir": "results"
 }
-
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 urls example:
 "urls": [
   "https://x.com/clcoding/status/1957509803057574278",
   "https://x.com/another_user/status/123456789"
 ]
-
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 output_formats:
 ["json", "csv", "excel", "txt"]
 Example:
 "output_formats": ["json", "csv"]
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 credentials must be valid or you get errors
 "credentials": {
@@ -40,6 +45,7 @@ credentials must be valid or you get errors
   "TWITTER_PASSWORD": "your_password",
   "TWITTER_EMAIL": "your_email"
 }
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 proxy Example:
 "proxy": {
